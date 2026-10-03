@@ -10,7 +10,9 @@
  *           redux       Il2CppInspectorRedux Legacy CLI (C# stubs, shim DLLs, metadata.json, Ghidra script)
  *           cpp2il      Cpp2IL nightly  --output-as dll_il_recovery (approximate method bodies)
  *           ilspy       ilspycmd on the Cpp2IL DLLs of the game assemblies -> .cs projects
- *           assetripper AssetRipper headless: Unity project export (prefabs, scenes, MB/SO values)
+ *           assetripper AssetRipper headless, same as the GUI: Open File <game>.exe -> Export Primary Content
+ *                       with Create subfolder (.cs if Mono, .glb 3D, images, audio, fonts); --unity-project adds
+ *                       the Unity project export (prefabs, scenes, MonoBehaviour/SO serialized values)
  *           ghidra      OPT-IN (--ghidra): headless import + il2cpp.h + Il2CppDumper names, runs detached
  *   Mono    ilspy       ilspycmd on Managed/<game assemblies> (full method bodies)
  *           assetripper as above
@@ -27,7 +29,7 @@
  *   --steps a,b,c        subset of: dumper,redux,cpp2il,ilspy,assetripper,ghidra
  *   --ghidra             add the (long, detached) Ghidra headless step
  *   --ghidra-mem <N>G    Ghidra heap (default 12G)
- *   --primary            AssetRipper: also export Primary Content
+ *   --unity-project      AssetRipper: also export the Unity project (serialized values; meshes as .asset)
  *   --assemblies a,b     game assemblies to decompile (default: auto, vendor/framework filtered)
  *   --force              delete and redo a step whose output folder already exists
  *   --dry-run            detect and print the plan only, run nothing
@@ -77,7 +79,7 @@ function parseArgs(argv) {
         const a = argv[i];
         if (a.startsWith('--')) {
             const k = a.slice(2);
-            if (['ghidra', 'primary', 'force', 'dry-run', 'help'].includes(k)) o.flags[k] = true;
+            if (['ghidra', 'unity-project', 'force', 'dry-run', 'help'].includes(k)) o.flags[k] = true;
             else o.flags[k] = argv[++i];
         } else if (!o.game) o.game = a;
         else { console.error('Unexpected argument: ' + a); process.exit(2); }
@@ -337,16 +339,22 @@ async function stepAssetRipper(G, T, OUT, LOGS) {
         for (let i = 0; i < 60 && !up; i++) { await sleep(1500); up = (await http(base + '/', log)) === 200; }
         if (!up) return record('assetripper', 'FAIL', 'server did not come up on port ' + port);
         const t0 = Date.now();
-        await http(base + '/LoadFolder', log, { Path: toWin(G.root) });
-        await http(base + '/Export/UnityProject', log, { Path: toWin(path.join(dir, 'UnityProject')) });
-        if (args.flags.primary) await http(base + '/Export/PrimaryContent', log, { Path: toWin(path.join(dir, 'PrimaryContent')) });
-        const assets = path.join(dir, 'UnityProject', 'ExportedProject', 'Assets');
-        const ok = exists(assets);
-        record('assetripper', ok ? 'OK' : 'FAIL', ok
-            ? countFiles(path.join(assets, 'Scripts'), '.cs') + ' .cs in Assets/Scripts, ' + countFiles(path.join(assets, 'Plugins'), '.dll') + ' DLLs kept in Assets/Plugins (source: ilspy step), '
-              + countFiles(assets, '.prefab') + ' prefabs, ' + countFiles(assets, '.unity') + ' scenes, '
-              + countFiles(assets, '.asset') + ' .asset (' + Math.round((Date.now() - t0) / 1000) + ' s)'
-            : 'no ExportedProject/Assets - see logs/assetripper.log');
+        // Same as the GUI: File > Open File (<game>.exe), Export > Export all files, [x] Create subfolder, Export Primary Content.
+        await http(base + '/LoadFile', log, { Path: toWin(path.join(G.root, G.exeBase + '.exe')) });
+        await http(base + '/Export/PrimaryContent', log, { Path: toWin(dir), CreateSubfolder: 'true' });
+        if (args.flags['unity-project']) await http(base + '/Export/UnityProject', log, { Path: toWin(path.join(dir, 'UnityProject')) });
+        const sub = findDir(dir, 'AssetRipper_export_');
+        const n = exts => exts.reduce((s, e) => s + countFiles(sub, e), 0);
+        const notes = [];
+        if (sub) notes.push(path.basename(sub) + ': ' + n(['.cs']) + ' .cs, ' + n(['.glb', '.fbx', '.obj']) + ' 3D, '
+            + n(['.png', '.jpg', '.jpeg', '.tga', '.exr', '.hdr', '.bmp']) + ' images, ' + n(['.wav', '.ogg', '.mp3', '.flac', '.aif', '.aiff']) + ' audio, '
+            + n(['.ttf', '.otf']) + ' fonts, ' + n(['.dll']) + ' DLLs');
+        const project = path.join(dir, 'UnityProject', 'ExportedProject', 'Assets');
+        if (args.flags['unity-project'] && exists(project)) notes.push('UnityProject: ' + countFiles(project, '.prefab') + ' prefabs, '
+            + countFiles(project, '.unity') + ' scenes, ' + countFiles(project, '.asset') + ' .asset (serialized values)');
+        const ok = !!sub && (!args.flags['unity-project'] || exists(project));
+        record('assetripper', ok ? 'OK' : 'FAIL', ok ? notes.join(' | ') + ' (' + Math.round((Date.now() - t0) / 1000) + ' s)'
+            : 'export missing - see logs/assetripper.log');
     } finally {
         await ps('Get-NetTCPConnection -LocalPort ' + port + ' -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }', log);
         try { child.kill(); } catch { /* already gone */ }
