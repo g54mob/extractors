@@ -1,0 +1,12 @@
+https://github.com/Perfare/Il2CppDumper/releases/download/v6.7.46/Il2CppDumper-win-v6.7.46.zip
+https://github.com/LukeFZ/Il2CppInspectorRedux/releases/download/2026.2/Il2CppInspectorRedux.CLI-win-x64.zip
+https://github.com/LukeFZ/Il2CppInspectorRedux/releases/download/2026.2/Il2CppInspectorRedux.GUI.zip
+https://github.com/SamboyCoding/Cpp2IL/releases/download/2022.1.0-pre-release.21/Cpp2IL-2022.1.0-pre-release.21-Windows.exe
+https://github.com/icsharpcode/ILSpy/releases/download/v11.1/ILSpy_windows_11.1.0.9782-x64.zip
+https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_12.1.4_build/ghidra_12.1.4_PUBLIC_20260921.zip
+https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jdk_x64_windows_hotspot_21.0.12.1_1.zip
+https://github.com/LavaGang/MelonLoader/releases/download/v0.7.3/MelonLoader.x64.zip
+https://github.com/BepInEx/BepInEx/releases/download/v6.0.0-pre.2/BepInEx-Unity.IL2CPP-win-x64-6.0.0-pre.2.zip
+https://github.com/yukieiji/UnityExplorer/releases/download/v4.13.6/UnityExplorer.MelonLoader.IL2CPP.CoreCLR.zip
+https://github.com/yukieiji/UnityExplorer/releases/download/v4.13.6/UnityExplorer.MelonLoader.IL2CPP.zip
+https://github.com/yukieiji/UnityExplorer/releases/download/v4.13.6/UnityExplorer.BepInEx.Unity.IL2CPP.CoreCLR.zip

@@ -1,0 +1,11 @@
+# Track everything (tools, their .zip/.exe sources, our scripts); big binaries go through Git LFS (.gitattributes).
+# Only game-derived decompile output is excluded - it is generated and must never be committed.
+/output/
+/examples/
+
+# OS / interpreter junk
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+desktop.ini
